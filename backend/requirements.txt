@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+httpx
+sqlmodel
+alembic
+python-dotenv
+python-multipart
+itsdangerous
+passlib[bcrypt]
+pyjwt
+apscheduler
+pydantic
+reportlab
