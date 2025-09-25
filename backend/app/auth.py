@@ -10,6 +10,9 @@ CLIENT_ID = os.getenv('GITHUB_OAUTH_CLIENT_ID')
 CLIENT_SECRET = os.getenv('GITHUB_OAUTH_CLIENT_SECRET')
 DOMAIN = os.getenv('DOMAIN')
 
+# Only these GitHub usernames are allowed to log in
+ALLOWED_USERS = {"David-XY", "domi413"}
+
 @router.get("/auth/me")
 def me(request: Request):
     uid = request.cookies.get("user_id")
@@ -17,7 +20,9 @@ def me(request: Request):
         return {"user": None}
     session = next(get_session())
     user = session.get(User, int(uid))
-    return {"user": {"id": user.id, "username": user.username, "email": user.email}} if user else {"user": None}
+    if not user or user.username not in ALLOWED_USERS:
+        return {"user": None}
+    return {"user": {"id": user.id, "username": user.username, "email": user.email}}
 
 @router.get("/auth/github/login")
 def github_login():
@@ -28,19 +33,31 @@ def github_login():
 @router.get("/auth/github/callback")
 async def github_callback(code: str, request: Request):
     async with httpx.AsyncClient() as client:
-        r = await client.post("https://github.com/login/oauth/access_token",
-                              data={"client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, "code": code},
-                              headers={"Accept": "application/json"})
+        r = await client.post(
+            "https://github.com/login/oauth/access_token",
+            data={"client_id": CLIENT_ID, "client_secret": CLIENT_SECRET, "code": code},
+            headers={"Accept": "application/json"}
+        )
         data = r.json()
+
     token = data.get("access_token")
     if not token:
         raise HTTPException(status_code=400, detail="OAuth failed")
+
     async with httpx.AsyncClient() as client:
-        u = await client.get("https://api.github.com/user", headers={"Authorization": f"token {token}"})
+        u = await client.get(
+            "https://api.github.com/user",
+            headers={"Authorization": f"token {token}"}
+        )
         ud = u.json()
+
     github_id = str(ud["id"])
     username = ud.get("login")
     email = ud.get("email") or f"{username}@users.noreply.github.com"
+
+    # enforce whitelist before creating/allowing user
+    if username not in ALLOWED_USERS:
+        raise HTTPException(status_code=403, detail="Not authorized")
 
     session = next(get_session())
     user = session.exec(select(User).where(User.github_id == github_id)).first()
