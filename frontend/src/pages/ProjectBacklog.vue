@@ -14,6 +14,7 @@
       <li
         v-for="i in issues"
         :key="i.id"
+        :class="{ closed: i.state === 'closed' }"
         style="border:1px solid #ddd; padding:0.75rem; border-radius:8px;"
       >
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -169,3 +170,9 @@ async function addManual(issue: any) {
 onMounted(load)
 watch([projectId, qLabel, qAssignee], loadIssues)
 </script>
+
+<style scoped>
+.closed {
+  background-color: #ffe5e5; /* light red tint */
+}
+</style>
