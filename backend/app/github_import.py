@@ -31,45 +31,45 @@ async def import_repo(repo: str):
                 print(f"[import_repo] Got {len(batch)} issues on page {page}")
                 page += 1
 
-        session = next(get_session())
-        project = session.exec(select(Project).where(Project.github_repo == repo)).first()
-        if not project:
-            project = Project(name=repo.split('/')[-1], github_repo=repo)
-            session.add(project)
-            session.commit()
-            session.refresh(project)
-            print(f"[import_repo] Created new project {project.name}")
+        with next(get_session()) as session:
+            project = session.exec(select(Project).where(Project.github_repo == repo)).first()
+            if not project:
+                project = Project(name=repo.split('/')[-1], github_repo=repo)
+                session.add(project)
+                session.commit()
+                session.refresh(project)
+                print(f"[import_repo] Created new project {project.name}")
 
-        for it in items:
-            if "pull_request" in it:
-                continue
-            labels = [l.get("name") for l in it.get("labels", [])]
-            assignee = (it.get("assignee") or {}).get("login")
-            existing = session.exec(
-                select(Issue).where(Issue.project_id == project.id).where(Issue.github_number == it["number"])
-            ).first()
-            if existing:
-                existing.title = it["title"]
-                existing.body = it.get("body")
-                existing.url = it["html_url"]
-                existing.state = it.get("state", "open")
-                existing.labels = labels
-                existing.assignee = assignee
-                print(f"[import_repo] Updated issue #{it['number']}: {it['title']}")
-            else:
-                session.add(Issue(
-                    project_id=project.id,
-                    github_number=it["number"],
-                    title=it["title"],
-                    body=it.get("body"),
-                    url=it["html_url"],
-                    state=it.get("state", "open"),
-                    labels=labels,
-                    assignee=assignee
-                ))
-                print(f"[import_repo] Added new issue #{it['number']}: {it['title']}")
-        session.commit()
-        print(f"[import_repo] Finished import for {repo}, total {len(items)} issues processed")
+            for it in items:
+                if "pull_request" in it:
+                    continue
+                labels = [l.get("name") for l in it.get("labels", [])]
+                assignee = (it.get("assignee") or {}).get("login")
+                existing = session.exec(
+                    select(Issue).where(Issue.project_id == project.id).where(Issue.github_number == it["number"])
+                ).first()
+                if existing:
+                    existing.title = it["title"]
+                    existing.body = it.get("body")
+                    existing.url = it["html_url"]
+                    existing.state = it.get("state", "open")
+                    existing.labels = labels
+                    existing.assignee = assignee
+                    print(f"[import_repo] Updated issue #{it['number']}: {it['title']}")
+                else:
+                    session.add(Issue(
+                        project_id=project.id,
+                        github_number=it["number"],
+                        title=it["title"],
+                        body=it.get("body"),
+                        url=it["html_url"],
+                        state=it.get("state", "open"),
+                        labels=labels,
+                        assignee=assignee
+                    ))
+                    print(f"[import_repo] Added new issue #{it['number']}: {it['title']}")
+            session.commit()
+            print(f"[import_repo] Finished import for {repo}, total {len(items)} issues processed")
 
     except Exception as e:
         print(f"[import_repo] FAILED for {repo}: {e}")

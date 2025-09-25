@@ -10,10 +10,12 @@
         </nav>
         <span v-if="me">👤 {{ me.username }}</span>
         <a :href="loginHref" v-else>Login with GitHub</a>
-        <span v-if="timer?.running" style="font-size:0.9rem;">⏱ {{ timer.issue_title }} • {{ pretty(timer.elapsed_seconds) }}</span>
+        <span v-if="timer?.running" style="font-size:0.9rem;">
+          ⏱ {{ timer.issue_title }} • {{ pretty(timer.elapsed_seconds) }}
+        </span>
       </div>
     </header>
-    <router-view />
+    <router-view @timer-changed="refreshTimer" />
   </div>
 </template>
 
@@ -30,16 +32,23 @@ function pretty(s: number){
   return `${m}m ${sec}s`
 }
 
-async function load(){
-  me.value = (await api.me()).user
+async function refreshTimer() {
   try {
     const t = await api.timerStatus()
     timer.value = t
-  } catch {}
+  } catch {
+    timer.value = null
+  }
 }
-onMounted(()=>{
+
+async function load(){
+  me.value = (await api.me()).user
+  await refreshTimer()
+}
+
+onMounted(() => {
   load()
-  setInterval(async ()=>{
+  setInterval(() => {
     if (timer.value?.running) {
       timer.value.elapsed_seconds += 1
     }

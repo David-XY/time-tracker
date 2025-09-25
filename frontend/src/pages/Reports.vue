@@ -41,14 +41,38 @@ function getMonday(d: Date) {
   return monday
 }
 
+function randomColor() {
+  const r = Math.floor(Math.random() * 200)
+  const g = Math.floor(Math.random() * 200)
+  const b = Math.floor(Math.random() * 200)
+  return `rgba(${r}, ${g}, ${b}, 0.7)`
+}
+
 async function draw() {
   const params:any = { week_start: weekStart.value }
   if (userId.value) params.user_id = userId.value
   if (projectId.value) params.project_id = projectId.value
   const data = await api.reportWeek(params)
+
+  // assign distinct colors
+  data.datasets = data.datasets.map((ds:any) => ({
+    ...ds,
+    backgroundColor: randomColor()
+  }))
+
   const ctx = canvas.value!.getContext('2d')!
   if (chart) chart.destroy()
-  chart = new Chart(ctx, { type: 'bar', data, options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true } } } })
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data,
+    options: {
+      responsive: true,
+      scales: {
+        x: { stacked: false },  // grouped bars
+        y: { stacked: false }
+      }
+    }
+  })
 }
 
 function downloadPdf(){

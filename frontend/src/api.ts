@@ -23,6 +23,7 @@ export const api = {
     const q = new URLSearchParams(params as any).toString();
     return req(`/api/time-entries${q ? `?${q}` : ''}`);
   },
+  deleteTimeEntry: (id: number) => req(`/api/time-entries/${id}`, { method: 'DELETE' }),
   reportWeek: (params: Record<string, any> = {}) => {
     const q = new URLSearchParams(params as any).toString();
     return req(`/api/reports/week${q ? `?${q}` : ''}`);
@@ -30,5 +31,6 @@ export const api = {
   reportPdfUrl: (params: Record<string, any> = {}) => {
     const q = new URLSearchParams(params as any).toString();
     return `${API_BASE}/api/reports/week.pdf${q ? `?${q}` : ''}`;
-  }
+  },
+  refreshIssues: () => req('/api/github/refresh', { method: 'POST' })
 }
