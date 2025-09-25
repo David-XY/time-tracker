@@ -3,7 +3,8 @@ from fastapi.responses import FileResponse
 from sqlmodel import select
 from datetime import date, datetime, timedelta
 from typing import Optional, Dict
-import os, tempfile
+import os
+import tempfile
 
 from .database import get_session
 from .models import Project, Issue, TimeEntry, Timer, User
@@ -167,7 +168,7 @@ def start_timer(issue_id: int, request: Request):
         if not issue:
             raise HTTPException(404, "Issue not found")
         running = session.exec(
-            select(Timer).where(Timer.user_id == user.id, Timer.running == True)
+            select(Timer).where(Timer.user_id == user.id, Timer.running)
         ).all()
         for t in running:
             t.running = False
@@ -185,7 +186,7 @@ def stop_timer(request: Request, payload: Dict = {}):
     user = current_user(request)
     with get_session() as session:
         timer = session.exec(
-            select(Timer).where(Timer.user_id == user.id, Timer.running == True)
+            select(Timer).where(Timer.user_id == user.id, Timer.running)
         ).first()
         if not timer:
             raise HTTPException(400, "No running timer")
@@ -210,7 +211,7 @@ def timer_status(request: Request):
     user = current_user(request)
     with get_session() as session:
         timer = session.exec(
-            select(Timer).where(Timer.user_id == user.id, Timer.running == True)
+            select(Timer).where(Timer.user_id == user.id, Timer.running)
         ).first()
         if not timer:
             return {"running": False}

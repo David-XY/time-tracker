@@ -1,4 +1,6 @@
-import os, httpx, traceback
+import os
+import httpx
+import traceback
 from sqlmodel import select
 from .database import get_session
 from .models import Project, Issue
@@ -43,7 +45,7 @@ async def import_repo(repo: str):
             for it in items:
                 if "pull_request" in it:
                     continue
-                labels = [l.get("name") for l in it.get("labels", [])]
+                labels = [label.get("name") for label in it.get("labels", [])]
                 assignee = (it.get("assignee") or {}).get("login")
                 existing = session.exec(
                     select(Issue).where(Issue.project_id == project.id).where(Issue.github_number == it["number"])
