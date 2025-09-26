@@ -42,7 +42,7 @@ def list_issues(
     project_id: Optional[int] = None,
     state: Optional[str] = None,
     label: Optional[str] = None,
-    assignee: Optional[str] = None
+    assignee: Optional[str] = None,
 ):
     with get_session() as session:
         stmt = select(Issue)
@@ -77,7 +77,11 @@ def add_time_entry(issue_id: int, payload: Dict, request: Request):
         minutes = int(payload.get("duration_minutes", 0))
         if minutes <= 0:
             raise HTTPException(400, "duration_minutes must be > 0")
-        d = date.fromisoformat(payload.get("date")) if payload.get("date") else date.today()
+        d = (
+            date.fromisoformat(payload.get("date"))
+            if payload.get("date")
+            else date.today()
+        )
         entry = TimeEntry(
             user_id=user.id,
             project_id=issue.project_id,
@@ -98,7 +102,7 @@ def list_time_entries(
     project_id: Optional[int] = None,
     user_id: Optional[int] = None,
     label: Optional[str] = None,
-    assignee: Optional[str] = None
+    assignee: Optional[str] = None,
 ):
     with get_session() as session:
         stmt = (
@@ -121,7 +125,7 @@ def list_time_entries(
         # apply label/assignee filtering
         if label or assignee:
             filtered = []
-            for (te, title, username, project_name) in rows:
+            for te, title, username, project_name in rows:
                 issue = session.get(Issue, te.issue_id)
                 if label and (not issue.labels or label not in issue.labels):
                     continue
@@ -143,7 +147,7 @@ def list_time_entries(
             }
             for (te, title, username, project_name) in rows
         ]
-    
+
 
 @api.delete("/time-entries/{entry_id}")
 def delete_time_entry(entry_id: int, request: Request):
@@ -159,7 +163,6 @@ def delete_time_entry(entry_id: int, request: Request):
     return {"ok": True}
 
 
-
 @api.post("/issues/{issue_id}/timer/start")
 def start_timer(issue_id: int, request: Request):
     user = current_user(request)
@@ -173,7 +176,10 @@ def start_timer(issue_id: int, request: Request):
         for t in running:
             t.running = False
         timer = Timer(
-            user_id=user.id, project_id=issue.project_id, issue_id=issue.id, running=True
+            user_id=user.id,
+            project_id=issue.project_id,
+            issue_id=issue.id,
+            running=True,
         )
         session.add(timer)
         session.commit()
@@ -231,7 +237,7 @@ def weekly_report(
     project_id: Optional[int] = None,
     user_id: Optional[int] = None,
     label: Optional[str] = None,
-    assignee: Optional[str] = None
+    assignee: Optional[str] = None,
 ):
     ws = (
         date.fromisoformat(week_start)
@@ -247,7 +253,7 @@ def weekly_report_pdf(
     project_id: Optional[int] = None,
     user_id: Optional[int] = None,
     label: Optional[str] = None,
-    assignee: Optional[str] = None
+    assignee: Optional[str] = None,
 ):
     ws = (
         date.fromisoformat(week_start)
