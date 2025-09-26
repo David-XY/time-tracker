@@ -67,6 +67,24 @@ def get_issue(issue_id: int):
         return it
 
 
+@api.get("/issues/by-gh/{owner}/{repo}/{number}")
+def get_issue_by_github(owner: str, repo: str, number: int):
+    with get_session() as session:
+        project = session.exec(
+            select(Project).where(Project.github_repo == f"{owner}/{repo}")
+        ).first()
+        if not project:
+            raise HTTPException(404, "Project not found")
+        issue = session.exec(
+            select(Issue).where(
+                Issue.project_id == project.id, Issue.github_number == number
+            )
+        ).first()
+        if not issue:
+            raise HTTPException(404, "Issue not found")
+        return issue
+
+
 @api.post("/issues/{issue_id}/time-entries")
 def add_time_entry(issue_id: int, payload: Dict, request: Request):
     user = current_user(request)
