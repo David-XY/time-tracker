@@ -139,7 +139,7 @@ def list_time_entries(
                 "issue_id": te.issue_id,
                 "issue_title": title,
                 "user": username,
-                "project": project_name,  # 👈 included project name
+                "project": project_name,
             }
             for (te, title, username, project_name) in rows
         ]
